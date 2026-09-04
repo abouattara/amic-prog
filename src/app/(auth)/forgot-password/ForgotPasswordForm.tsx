@@ -42,7 +42,7 @@ export default function ForgotPasswordForm() {
           type="email"
           autoComplete="email"
           required
-          className="mt-1 w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:border-blue-500 focus:outline-none"
+          className="mt-1 w-full rounded-lg border border-gray-300 bg-white px-3 py-2 text-sm text-gray-900 focus:border-blue-500 focus:outline-none"
         />
       </div>
       <button

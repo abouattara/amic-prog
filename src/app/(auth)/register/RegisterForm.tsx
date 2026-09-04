@@ -38,7 +38,7 @@ export default function RegisterForm() {
           <label htmlFor="firstName" className="block text-sm font-medium text-gray-700">Prénom</label>
           <input
             id="firstName" name="firstName" type="text" autoComplete="given-name" required minLength={2}
-            className="mt-1 w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:border-blue-500 focus:outline-none"
+            className="mt-1 w-full rounded-lg border border-gray-300 bg-white px-3 py-2 text-sm text-gray-900 focus:border-blue-500 focus:outline-none"
           />
           {fe('firstName') && <p className="mt-1 text-xs text-red-600">{fe('firstName')}</p>}
         </div>
@@ -46,7 +46,7 @@ export default function RegisterForm() {
           <label htmlFor="lastName" className="block text-sm font-medium text-gray-700">Nom</label>
           <input
             id="lastName" name="lastName" type="text" autoComplete="family-name" required minLength={2}
-            className="mt-1 w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:border-blue-500 focus:outline-none"
+            className="mt-1 w-full rounded-lg border border-gray-300 bg-white px-3 py-2 text-sm text-gray-900 focus:border-blue-500 focus:outline-none"
           />
           {fe('lastName') && <p className="mt-1 text-xs text-red-600">{fe('lastName')}</p>}
         </div>
@@ -55,7 +55,7 @@ export default function RegisterForm() {
         <label htmlFor="email" className="block text-sm font-medium text-gray-700">Email</label>
         <input
           id="email" name="email" type="email" autoComplete="email" required
-          className="mt-1 w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:border-blue-500 focus:outline-none"
+          className="mt-1 w-full rounded-lg border border-gray-300 bg-white px-3 py-2 text-sm text-gray-900 focus:border-blue-500 focus:outline-none"
         />
         {fe('email') && <p className="mt-1 text-xs text-red-600">{fe('email')}</p>}
       </div>
@@ -63,7 +63,7 @@ export default function RegisterForm() {
         <label htmlFor="password" className="block text-sm font-medium text-gray-700">Mot de passe</label>
         <input
           id="password" name="password" type="password" autoComplete="new-password" required minLength={8}
-          className="mt-1 w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:border-blue-500 focus:outline-none"
+          className="mt-1 w-full rounded-lg border border-gray-300 bg-white px-3 py-2 text-sm text-gray-900 focus:border-blue-500 focus:outline-none"
         />
         <p className="mt-1 text-xs text-gray-400">Minimum 8 caractères</p>
         {fe('password') && <p className="mt-1 text-xs text-red-600">{fe('password')}</p>}
@@ -72,7 +72,7 @@ export default function RegisterForm() {
         <label htmlFor="confirmPassword" className="block text-sm font-medium text-gray-700">Confirmer le mot de passe</label>
         <input
           id="confirmPassword" name="confirmPassword" type="password" autoComplete="new-password" required minLength={8}
-          className="mt-1 w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:border-blue-500 focus:outline-none"
+          className="mt-1 w-full rounded-lg border border-gray-300 bg-white px-3 py-2 text-sm text-gray-900 focus:border-blue-500 focus:outline-none"
         />
         {fe('confirmPassword') && <p className="mt-1 text-xs text-red-600">{fe('confirmPassword')}</p>}
       </div>

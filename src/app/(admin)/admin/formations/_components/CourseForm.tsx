@@ -207,7 +207,7 @@ export default function CourseForm({ mode, categories, course }: CourseFormProps
 }
 
 const input =
-  'w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:border-blue-500 focus:outline-none'
+  'w-full rounded-lg border border-gray-300 bg-white px-3 py-2 text-sm text-gray-900 focus:border-blue-500 focus:outline-none'
 
 function Field({
   label,

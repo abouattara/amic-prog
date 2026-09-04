@@ -12,7 +12,9 @@
     "db:migrate": "prisma migrate dev",
     "db:seed": "node scripts/seed.mjs",
     "db:studio": "prisma studio",
-    "db:reset": "prisma migrate reset --force && node scripts/seed.mjs"
+    "db:reset": "prisma migrate reset --force && node scripts/seed.mjs",
+    "test": "vitest run",
+    "test:watch": "vitest"
   },
   "dependencies": {
     "@auth/prisma-adapter": "^2.11.3",
@@ -29,11 +31,14 @@
     "next": "16.3.4",
     "next-auth": "^5.0.0-beta.32",
     "nodemailer": "^8.0.11",
+    "pdf-lib": "^1.17.1",
     "pg": "^8.23.0",
     "prisma": "^7.10.0",
+    "qrcode": "^1.5.4",
     "react": "19.2.8",
     "react-dom": "19.2.8",
     "react-hook-form": "^7.87.0",
+    "resend": "^6.25.0",
     "tailwind-merge": "^3.6.0",
     "zod": "^4.5.4"
   },
@@ -42,6 +47,7 @@
     "@types/bcryptjs": "^2.4.6",
     "@types/node": "^20",
     "@types/nodemailer": "^8.0.1",
+    "@types/qrcode": "^1.5.6",
     "@types/react": "^19",
     "@types/react-dom": "^19",
     "embedded-postgres": "^18.4.0-beta.17",
@@ -50,6 +56,7 @@
     "prettier": "^3.9.6",
     "prettier-plugin-tailwindcss": "^0.8.1",
     "tailwindcss": "^4",
-    "typescript": "^5"
+    "typescript": "^5",
+    "vitest": "^4.1.11"
   }
 }

@@ -1,6 +1,7 @@
 import Link from 'next/link'
 import { Search } from 'lucide-react'
 import { prisma } from '@/lib/prisma'
+import { formatPrice } from '@/lib/utils'
 
 interface SearchParams {
   q?: string
@@ -137,13 +138,7 @@ export default async function FormationsPage({
                     par {`${course.instructor.firstName} ${course.instructor.lastName}`.trim() || 'Formateur'}
                   </span>
                   <span className="font-bold text-blue-700">
-                    {course.price === 0
-                      ? 'Gratuit'
-                      : new Intl.NumberFormat('fr-BF', {
-                          style: 'currency',
-                          currency: course.currency,
-                          maximumFractionDigits: 0,
-                        }).format(course.price / 100)}
+                    {course.price === 0 ? 'Gratuit' : formatPrice(course.price, course.currency)}
                   </span>
                 </div>
               </div>

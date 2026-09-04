@@ -24,12 +24,12 @@ const RegisterSchema = z
 
 export async function registerAction(formData: FormData): Promise<ActionResult<{ email: string }>> {
   const raw = {
-    firstName: formData.get('firstName'),
-    lastName: formData.get('lastName'),
-    email: formData.get('email'),
-    phone: formData.get('phone'),
-    password: formData.get('password'),
-    confirmPassword: formData.get('confirmPassword'),
+    firstName: (formData.get('firstName') as string) || '',
+    lastName: (formData.get('lastName') as string) || '',
+    email: (formData.get('email') as string) || '',
+    phone: (formData.get('phone') as string) || undefined,
+    password: (formData.get('password') as string) || '',
+    confirmPassword: (formData.get('confirmPassword') as string) || '',
   }
 
   const parsed = RegisterSchema.safeParse(raw)
@@ -74,8 +74,8 @@ export async function registerAction(formData: FormData): Promise<ActionResult<{
 export async function loginAction(formData: FormData): Promise<ActionResult> {
   try {
     await signIn('credentials', {
-      email: formData.get('email'),
-      password: formData.get('password'),
+      email: (formData.get('email') as string) || '',
+      password: (formData.get('password') as string) || '',
       redirect: false,
     })
     return { success: true }

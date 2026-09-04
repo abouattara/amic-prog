@@ -6,6 +6,7 @@ import { z } from 'zod'
 import { revalidatePath } from 'next/cache'
 import { redirect } from 'next/navigation'
 import type { ActionResult } from '@/types'
+import { notifyNewCourse } from '@/features/notifications/core'
 
 const CourseSchema = z.object({
   title: z.string().min(5, 'Titre requis (min 5 caractères)'),
@@ -33,10 +34,19 @@ export async function createCourseAction(
     return { success: false, error: 'Non autorisé.' }
   }
 
-  const raw = Object.fromEntries(
-    ['title', 'slug', 'description', 'shortDesc', 'price', 'currency', 'categoryId', 'level', 'language', 'thumbnailUrl', 'status']
-      .map((k) => [k, formData.get(k) ?? '']),
-  )
+  const raw = {
+    title: formData.get('title') ?? '',
+    slug: formData.get('slug') ?? '',
+    description: formData.get('description') ?? '',
+    shortDesc: formData.get('shortDesc') ?? '',
+    price: formData.get('price') ?? '0',
+    currency: (formData.get('currency') as string) || 'XOF',
+    categoryId: formData.get('categoryId') ?? '',
+    level: formData.get('level') ?? '',
+    language: (formData.get('language') as string) || 'fr',
+    thumbnailUrl: formData.get('thumbnailUrl') ?? '',
+    status: formData.get('status') ?? 'DRAFT',
+  }
 
   const parsed = CourseSchema.safeParse(raw)
   if (!parsed.success) {
@@ -72,10 +82,19 @@ export async function updateCourseAction(courseId: string, formData: FormData): 
     return { success: false, error: 'Non autorisé.' }
   }
 
-  const raw = Object.fromEntries(
-    ['title', 'slug', 'description', 'shortDesc', 'price', 'currency', 'categoryId', 'level', 'language', 'thumbnailUrl', 'status']
-      .map((k) => [k, formData.get(k) ?? '']),
-  )
+  const raw = {
+    title: formData.get('title') ?? '',
+    slug: formData.get('slug') ?? '',
+    description: formData.get('description') ?? '',
+    shortDesc: formData.get('shortDesc') ?? '',
+    price: formData.get('price') ?? '0',
+    currency: (formData.get('currency') as string) || 'XOF',
+    categoryId: formData.get('categoryId') ?? '',
+    level: formData.get('level') ?? '',
+    language: (formData.get('language') as string) || 'fr',
+    thumbnailUrl: formData.get('thumbnailUrl') ?? '',
+    status: formData.get('status') ?? 'DRAFT',
+  }
 
   const parsed = CourseSchema.safeParse(raw)
   if (!parsed.success) {
@@ -92,6 +111,12 @@ export async function updateCourseAction(courseId: string, formData: FormData): 
     return { success: false, fieldErrors: { slug: ['Ce slug est déjà utilisé.'] } }
   }
 
+  // Lire le statut courant pour détecter la transition vers PUBLISHED
+  const prevCourse = await prisma.course.findUnique({
+    where: { id: courseId },
+    select: { status: true },
+  })
+
   await prisma.course.update({
     where: { id: courseId },
     data: {
@@ -103,6 +128,17 @@ export async function updateCourseAction(courseId: string, formData: FormData): 
       categoryId: categoryId || null,
     },
   })
+
+  // NEW_COURSE : notifier les apprenants lors de la première publication
+  // Choix : tous les utilisateurs avec rôle STUDENT actifs sur la plateforme.
+  // try/catch isolé — un échec de notification ne bloque pas la mise à jour.
+  if (prevCourse?.status !== 'PUBLISHED' && parsed.data.status === 'PUBLISHED') {
+    try {
+      await notifyNewCourse(courseId, parsed.data.title)
+    } catch (err) {
+      console.error('[Notification:NEW_COURSE]', err)
+    }
+  }
 
   revalidatePath('/admin/formations')
   revalidatePath(`/admin/formations/${courseId}`)

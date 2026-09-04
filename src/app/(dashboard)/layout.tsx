@@ -1,12 +1,17 @@
 import { redirect } from 'next/navigation'
 import Link from 'next/link'
 import { auth } from '@/lib/auth'
+import { prisma } from '@/lib/prisma'
 import { BookOpen, Home, Bell, LogOut, User, CreditCard, Award } from 'lucide-react'
 import { logoutAction } from '@/features/auth/actions'
 
 export default async function DashboardLayout({ children }: { children: React.ReactNode }) {
   const session = await auth()
   if (!session?.user) redirect('/login')
+
+  const unreadCount = await prisma.notification.count({
+    where: { userId: session.user.id, read: false },
+  })
 
   return (
     <div className="flex min-h-screen">
@@ -25,9 +30,13 @@ export default async function DashboardLayout({ children }: { children: React.Re
           <SidebarLink href="/dashboard/formations" icon={<BookOpen className="h-4 w-4" />}>
             Mes formations
           </SidebarLink>
-          <SidebarLink href="/dashboard/notifications" icon={<Bell className="h-4 w-4" />}>
+          <SidebarLinkWithBadge
+            href="/dashboard/notifications"
+            icon={<Bell className="h-4 w-4" />}
+            badge={unreadCount}
+          >
             Notifications
-          </SidebarLink>
+          </SidebarLinkWithBadge>
           <SidebarLink href="/dashboard/paiements" icon={<CreditCard className="h-4 w-4" />}>
             Paiements
           </SidebarLink>
@@ -84,6 +93,40 @@ function SidebarLink({
     >
       {icon}
       {children}
+    </Link>
+  )
+}
+
+function SidebarLinkWithBadge({
+  href,
+  icon,
+  badge,
+  children,
+}: {
+  href: string
+  icon: React.ReactNode
+  badge: number
+  children: React.ReactNode
+}) {
+  return (
+    <Link
+      href={href}
+      className="flex items-center gap-2 rounded-lg px-3 py-2 text-sm font-medium text-gray-700 hover:bg-blue-50 hover:text-blue-700 transition-colors"
+    >
+      <span className="relative">
+        {icon}
+        {badge > 0 && (
+          <span className="absolute -top-1 -right-1 flex h-3.5 w-3.5 items-center justify-center rounded-full bg-red-500 text-[9px] font-bold text-white leading-none">
+            {badge > 9 ? '9+' : badge}
+          </span>
+        )}
+      </span>
+      <span className="flex-1">{children}</span>
+      {badge > 0 && (
+        <span className="rounded-full bg-red-100 px-1.5 py-0.5 text-xs font-semibold text-red-600">
+          {badge}
+        </span>
+      )}
     </Link>
   )
 }

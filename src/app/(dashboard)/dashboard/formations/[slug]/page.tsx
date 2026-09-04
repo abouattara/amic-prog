@@ -2,9 +2,11 @@ import { notFound, redirect } from 'next/navigation'
 import { auth } from '@/lib/auth'
 import { getCourseBySlug, checkEnrollment } from '@/features/courses/queries'
 import { prisma } from '@/lib/prisma'
-import { PlayCircle, FileText, CheckCircle, Award } from 'lucide-react'
+import { PlayCircle, FileText, CheckCircle, Award, HelpCircle, Download } from 'lucide-react'
 import { formatDuration } from '@/lib/utils'
 import Link from 'next/link'
+import LessonCompleteButton from './_components/LessonCompleteButton'
+import { getSignedLessonUrl } from '@/features/media/signed-url-core'
 
 export default async function CoursePlayerPage({
   params,
@@ -48,6 +50,19 @@ export default async function CoursePlayerPage({
         include: { video: true },
       })
     : null
+
+  // Generate short-lived signed URL for media access (VIDEO / DOCUMENT)
+  const signedMedia =
+    activeLesson && (activeLesson.type === 'VIDEO' || activeLesson.type === 'DOCUMENT')
+      ? await getSignedLessonUrl(activeLesson.id, session.user.id)
+      : null
+
+  // Quizzes du cours (pour la sidebar)
+  const quizzes = await prisma.quiz.findMany({
+    where: { courseId: course.id },
+    select: { id: true, title: true },
+    orderBy: { createdAt: 'asc' },
+  })
 
   const certificate = await prisma.certificate.findUnique({
     where: { userId_courseId: { userId: session.user.id, courseId: course.id } },
@@ -118,6 +133,27 @@ export default async function CoursePlayerPage({
               </ul>
             </div>
           ))}
+
+          {quizzes.length > 0 && (
+            <div className="border-t border-gray-100 mt-3 pt-3">
+              <p className="px-2 text-xs font-semibold uppercase tracking-wide text-gray-400 mb-1">
+                Quiz
+              </p>
+              <ul className="space-y-0.5">
+                {quizzes.map((quiz) => (
+                  <li key={quiz.id}>
+                    <Link
+                      href={`/dashboard/formations/${slug}/quiz/${quiz.id}`}
+                      className="flex items-center gap-2 rounded-lg px-3 py-2 text-sm text-gray-700 hover:bg-gray-50"
+                    >
+                      <HelpCircle className="h-3.5 w-3.5 flex-shrink-0" />
+                      <span className="flex-1 line-clamp-2 leading-tight">{quiz.title}</span>
+                    </Link>
+                  </li>
+                ))}
+              </ul>
+            </div>
+          )}
         </div>
       </aside>
 
@@ -125,18 +161,49 @@ export default async function CoursePlayerPage({
       <div className="flex-1 flex flex-col overflow-y-auto bg-gray-50">
         {activeLesson ? (
           <>
-            {/* Video placeholder */}
+            {/* Video player */}
             {activeLesson.type === 'VIDEO' && (
-              <div className="bg-black aspect-video w-full flex items-center justify-center">
-                <div className="text-center text-white">
-                  <PlayCircle className="mx-auto h-16 w-16 opacity-60" />
-                  <p className="mt-2 text-sm opacity-60">
-                    Vidéo : {activeLesson.video?.providerVideoId ?? 'mock'}
-                  </p>
-                  <p className="text-xs opacity-40 mt-1">
-                    {activeLesson.video?.duration ? formatDuration(activeLesson.video.duration) : ''}
-                  </p>
-                </div>
+              <div className="bg-black aspect-video w-full">
+                {signedMedia ? (
+                  <video
+                    key={signedMedia.url}
+                    src={signedMedia.url}
+                    controls
+                    controlsList="nodownload"
+                    className="w-full h-full"
+                  />
+                ) : (
+                  <div className="flex h-full items-center justify-center text-center text-white">
+                    <div>
+                      <PlayCircle className="mx-auto h-16 w-16 opacity-40" />
+                      <p className="mt-2 text-sm opacity-50">
+                        {activeLesson.video ? 'Erreur de lecture' : 'Aucune vidéo uploadée'}
+                      </p>
+                      {activeLesson.video?.duration && (
+                        <p className="text-xs opacity-30 mt-1">{formatDuration(activeLesson.video.duration)}</p>
+                      )}
+                    </div>
+                  </div>
+                )}
+              </div>
+            )}
+
+            {/* Document viewer */}
+            {activeLesson.type === 'DOCUMENT' && signedMedia && (
+              <div className="border-b border-gray-200 bg-gray-100 p-4 flex items-center gap-3">
+                <FileText className="h-5 w-5 text-gray-500 flex-shrink-0" />
+                <a
+                  href={signedMedia.url}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="flex items-center gap-2 rounded-lg bg-blue-600 px-4 py-2 text-sm font-medium text-white hover:bg-blue-700"
+                >
+                  <Download className="h-4 w-4" />
+                  Ouvrir le document PDF
+                </a>
+                <span className="text-xs text-gray-400">
+                  Lien valide {Math.round((signedMedia.expiresAt.getTime() - Date.now()) / 60000)} min
+                </span>
               </div>
             )}
             <div className="p-6">
@@ -144,8 +211,16 @@ export default async function CoursePlayerPage({
               {activeLesson.description && (
                 <p className="mt-2 text-gray-600">{activeLesson.description}</p>
               )}
+              {/* Marquer comme terminé */}
+              <div className="mt-6">
+                <LessonCompleteButton
+                  lessonId={activeLesson.id}
+                  isCompleted={completedIds.has(activeLesson.id)}
+                />
+              </div>
+
               {/* Navigation */}
-              <div className="mt-6 flex gap-3">
+              <div className="mt-4 flex gap-3">
                 {(() => {
                   const idx = allLessons.findIndex((l) => l.id === activeLesson.id)
                   const prev = idx > 0 ? allLessons[idx - 1] : null

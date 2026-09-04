@@ -446,11 +446,14 @@ model Notification {
   title     String
   body      String
   read      Boolean           @default(false)
+  readAt    DateTime?                   // date de lecture (null = non lu)
+  sourceId  String?                     // ID de la ressource source pour déduplication idempotente
   createdAt DateTime          @default(now())
 
   user User @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   @@index([userId, read])
+  @@index([userId, event, sourceId])   // accélère la vérification d'idempotence
 }
 
 // ============================================================

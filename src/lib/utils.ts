@@ -13,9 +13,10 @@ export function generateCertificateNumber(): string {
 }
 
 export function formatPrice(amountCentimes: number, currency = 'XOF'): string {
+  const safeCurrency = currency && currency.length === 3 ? currency : 'XOF'
   return new Intl.NumberFormat('fr-BF', {
     style: 'currency',
-    currency,
+    currency: safeCurrency,
     maximumFractionDigits: 0,
   }).format(amountCentimes / 100)
 }

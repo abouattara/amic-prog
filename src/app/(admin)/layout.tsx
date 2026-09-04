@@ -10,6 +10,7 @@ import {
   Award,
   Settings,
   LogOut,
+  Tag,
 } from 'lucide-react'
 
 export default async function AdminLayout({ children }: { children: React.ReactNode }) {
@@ -32,6 +33,9 @@ export default async function AdminLayout({ children }: { children: React.ReactN
           </AdminLink>
           <AdminLink href="/admin/formations" icon={<BookOpen className="h-4 w-4" />}>
             Formations
+          </AdminLink>
+          <AdminLink href="/admin/categories" icon={<Tag className="h-4 w-4" />}>
+            Catégories
           </AdminLink>
           <AdminLink href="/admin/utilisateurs" icon={<Users className="h-4 w-4" />}>
             Utilisateurs
