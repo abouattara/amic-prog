@@ -4,8 +4,9 @@ import { auth } from '@/lib/auth'
 import { revalidatePath } from 'next/cache'
 import { createModuleCore, updateModuleCore, deleteModuleCore, moveModuleCore } from './module-core'
 import type { ActionResult } from '@/types'
+import type { Session } from 'next-auth'
 
-function role(session: Awaited<ReturnType<typeof auth>>): string {
+function role(session: Session | null): string {
   return session?.user?.role ?? ''
 }
 

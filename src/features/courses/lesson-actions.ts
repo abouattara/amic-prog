@@ -5,10 +5,11 @@ import { revalidatePath } from 'next/cache'
 import { createLessonCore, updateLessonCore, deleteLessonCore, moveLessonCore } from './lesson-core'
 import type { LessonInput } from './lesson-core'
 import type { ActionResult } from '@/types'
+import type { Session } from 'next-auth'
 
 export type { LessonInput }
 
-function role(session: Awaited<ReturnType<typeof auth>>): string {
+function role(session: Session | null): string {
   return session?.user?.role ?? ''
 }
 

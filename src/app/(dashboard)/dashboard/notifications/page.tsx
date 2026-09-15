@@ -39,7 +39,7 @@ export default async function NotificationsPage() {
           )}
         </div>
         {unreadCount > 0 && (
-          <form action={markAllNotificationsAsReadAction}>
+          <form action={async () => { await markAllNotificationsAsReadAction() }}>
             <button
               type="submit"
               className="inline-flex items-center gap-1.5 rounded-lg border border-gray-300 bg-white px-3 py-1.5 text-sm text-gray-600 hover:bg-gray-50 transition-colors"
@@ -93,7 +93,7 @@ export default async function NotificationsPage() {
                       })}
                     </p>
                     {!n.read && (
-                      <form action={markNotificationAsReadAction.bind(null, n.id)}>
+                      <form action={async () => { await markNotificationAsReadAction(n.id) }}>
                         <button
                           type="submit"
                           className="text-xs text-blue-600 hover:text-blue-700 hover:underline"

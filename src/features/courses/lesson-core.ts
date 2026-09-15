@@ -29,7 +29,7 @@ export async function createLessonCore(
   if (!isAdmin(userRole)) return { success: false, error: 'Non autorisé.' }
 
   const parsed = LessonSchema.safeParse(input)
-  if (!parsed.success) return { success: false, error: parsed.error.errors[0].message }
+  if (!parsed.success) return { success: false, error: parsed.error.issues[0].message }
 
   const mod = await prisma.courseModule.findUnique({
     where: { id: moduleId },
@@ -69,7 +69,7 @@ export async function updateLessonCore(
   if (!isAdmin(userRole)) return { success: false, error: 'Non autorisé.' }
 
   const parsed = LessonSchema.safeParse(input)
-  if (!parsed.success) return { success: false, error: parsed.error.errors[0].message }
+  if (!parsed.success) return { success: false, error: parsed.error.issues[0].message }
 
   const lesson = await prisma.lesson.findUnique({
     where: { id: lessonId },
