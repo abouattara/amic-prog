@@ -1,5 +1,5 @@
 /**
- * Script de test manuel pour l'envoi d'email via Resend.
+ * Script de test manuel pour l'envoi d'email (SMTP ou Resend).
  * Usage : npx tsx scripts/send-test-email.ts <adresse@email.com> [event]
  * Exemple : npx tsx scripts/send-test-email.ts admin@exemple.com QUIZ_PASSED
  *
@@ -19,7 +19,6 @@ function loadEnvLocal() {
       if (eqIdx === -1) continue
       const key = trimmed.slice(0, eqIdx).trim()
       const raw = trimmed.slice(eqIdx + 1).trim()
-      // Retire les guillemets éventuels
       const val = raw.replace(/^["']|["']$/g, '')
       if (!process.env[key]) process.env[key] = val
     }
@@ -30,7 +29,6 @@ function loadEnvLocal() {
 loadEnvLocal()
 
 // ── Imports après chargement des variables ────────────────────────────────────
-import { Resend } from 'resend'
 import { buildEmailContent } from '../src/services/email-templates'
 import type { SendNotificationParams } from '../src/services/notification-provider'
 import type { NotificationEvent } from '@prisma/client'
@@ -43,13 +41,8 @@ if (!to) {
   process.exit(1)
 }
 
-const apiKey = process.env.EMAIL_API_KEY ?? ''
-const from = process.env.EMAIL_FROM ?? 'onboarding@resend.dev'
-
-if (!apiKey) {
-  console.error('[send-test-email] EMAIL_API_KEY absent — impossible d\'envoyer via Resend.')
-  process.exit(1)
-}
+const providerType = process.env.EMAIL_PROVIDER || 'mock'
+const emailFrom = process.env.EMAIL_FROM ?? process.env.EMAIL_SMTP_USER ?? 'no-reply@localhost'
 
 const testParams: SendNotificationParams = {
   userId: 'test-script',
@@ -60,18 +53,55 @@ const testParams: SendNotificationParams = {
 
 const { subject, html } = buildEmailContent(testParams)
 
+console.log(`[send-test-email] Provider: ${providerType}`)
 console.log(`[send-test-email] Envoi de "${subject}" → ${to}`)
-console.log(`[send-test-email] From: ${from} | Provider: Resend`)
 
 async function main() {
-  const resend = new Resend(apiKey)
-  const { data, error } = await resend.emails.send({ from, to, subject, html })
+  if (providerType === 'smtp') {
+    const user = process.env.EMAIL_SMTP_USER ?? ''
+    const pass = process.env.EMAIL_SMTP_PASS ?? ''
+    const host = process.env.EMAIL_SMTP_HOST ?? 'smtp.gmail.com'
+    const port = parseInt(process.env.EMAIL_SMTP_PORT ?? '587', 10)
 
-  if (error) {
-    console.error('[send-test-email] Echec :', error)
-    process.exit(1)
+    if (!user || !pass) {
+      console.error('[send-test-email] EMAIL_SMTP_USER ou EMAIL_SMTP_PASS absent dans .env.local')
+      process.exit(1)
+    }
+
+    const nodemailer = await import('nodemailer')
+    const transporter = nodemailer.createTransport({
+      host,
+      port,
+      secure: port === 465,
+      auth: { user, pass },
+    })
+
+    console.log(`[send-test-email] SMTP: ${host}:${port} | from: ${emailFrom}`)
+
+    const info = await transporter.sendMail({ from: emailFrom, to, subject, html })
+    console.log(`[send-test-email] Email envoyé. messageId: ${info.messageId}`)
+
+  } else if (providerType === 'resend') {
+    const apiKey = process.env.EMAIL_API_KEY ?? ''
+    if (!apiKey) {
+      console.error('[send-test-email] EMAIL_API_KEY absent dans .env.local')
+      process.exit(1)
+    }
+
+    const { Resend } = await import('resend')
+    const resend = new Resend(apiKey)
+    const { data, error } = await resend.emails.send({ from: emailFrom, to, subject, html })
+
+    if (error) {
+      console.error('[send-test-email] Echec Resend :', error)
+      process.exit(1)
+    }
+    console.log(`[send-test-email] Email envoyé. ID Resend: ${data?.id}`)
+
   } else {
-    console.log(`[send-test-email] Email envoyé. ID Resend : ${data?.id}`)
+    console.error(`[send-test-email] EMAIL_PROVIDER="${providerType}" ne permet pas d'envoi réel.`)
+    console.error('Changez EMAIL_PROVIDER en "smtp" ou "resend" dans .env.local pour tester.')
+    process.exit(1)
   }
 }
 

@@ -10,6 +10,7 @@ import { prisma } from '@/lib/prisma'
 import {
   MockNotificationProvider,
   ResendEmailProvider,
+  SmtpEmailProvider,
   createNotificationProvider,
 } from '@/services/notification-provider'
 
@@ -66,6 +67,27 @@ describe('createNotificationProvider : sélection par EMAIL_PROVIDER', () => {
     expect(warnSpy).toHaveBeenCalledWith(expect.stringContaining('EMAIL_API_KEY absent'))
     vi.unstubAllEnvs()
     warnSpy.mockRestore()
+  })
+
+  it('EMAIL_PROVIDER=smtp sans credentials → MockNotificationProvider (fallback avec warn)', () => {
+    const warnSpy = vi.spyOn(console, 'warn').mockImplementation(() => {})
+    vi.stubEnv('EMAIL_PROVIDER', 'smtp')
+    vi.stubEnv('EMAIL_SMTP_USER', '')
+    vi.stubEnv('EMAIL_SMTP_PASS', '')
+    const p = createNotificationProvider()
+    expect(p).toBeInstanceOf(MockNotificationProvider)
+    expect(warnSpy).toHaveBeenCalledWith(expect.stringContaining('EMAIL_SMTP_USER/EMAIL_SMTP_PASS absent'))
+    vi.unstubAllEnvs()
+    warnSpy.mockRestore()
+  })
+
+  it('EMAIL_PROVIDER=smtp avec credentials → SmtpEmailProvider', () => {
+    vi.stubEnv('EMAIL_PROVIDER', 'smtp')
+    vi.stubEnv('EMAIL_SMTP_USER', 'test@gmail.com')
+    vi.stubEnv('EMAIL_SMTP_PASS', 'app-password-test')
+    const p = createNotificationProvider()
+    expect(p).toBeInstanceOf(SmtpEmailProvider)
+    vi.unstubAllEnvs()
   })
 
   it('EMAIL_PROVIDER=resend avec clé → ResendEmailProvider', () => {
@@ -206,6 +228,70 @@ describe('ResendEmailProvider : la DB est toujours alimentée, l\'email est best
 
     // L'email n'est pas envoyé car l'étape DB échoue avant
     expect(sendFn).not.toHaveBeenCalled()
+  })
+})
+
+// ── SmtpEmailProvider : isolation des échecs email ───────────────────────────
+
+describe('SmtpEmailProvider : la DB est toujours alimentée, l\'email est best-effort', () => {
+  it('envoi réussi → notification en DB + messageId loggé', async () => {
+    const sendMailFn = vi.fn().mockResolvedValue({ messageId: 'smtp-msg-123' })
+    const mockTransporter = { sendMail: sendMailFn }
+    const provider = new SmtpEmailProvider(mockTransporter)
+
+    await provider.send({
+      userId,
+      event: 'ACCOUNT_CREATED',
+      title: 'Bienvenue',
+      body: 'Votre compte a été créé.',
+      sourceId: `${P}-smtp-ok`,
+    })
+
+    const n = await prisma.notification.findFirst({ where: { userId, sourceId: `${P}-smtp-ok` } })
+    expect(n).not.toBeNull()
+    expect(sendMailFn).toHaveBeenCalledOnce()
+    expect(sendMailFn.mock.calls[0][0].to).toBe(`${P}@t.com`)
+  })
+
+  it('exception sendMail → DB notification créée, aucune exception propagée', async () => {
+    const errorSpy = vi.spyOn(console, 'error').mockImplementation(() => {})
+    const sendMailFn = vi.fn().mockRejectedValue(new Error('SMTP connection refused'))
+    const mockTransporter = { sendMail: sendMailFn }
+    const provider = new SmtpEmailProvider(mockTransporter)
+
+    await expect(
+      provider.send({
+        userId,
+        event: 'PAYMENT_SUCCESS',
+        title: 'Paiement',
+        body: 'Confirmé.',
+        sourceId: `${P}-smtp-throw`,
+      }),
+    ).resolves.toBeUndefined()
+
+    const n = await prisma.notification.findFirst({ where: { userId, sourceId: `${P}-smtp-throw` } })
+    expect(n).not.toBeNull()
+    expect(errorSpy).toHaveBeenCalledWith(
+      expect.stringContaining('exception lors de l\'envoi'),
+      expect.any(Error),
+    )
+    errorSpy.mockRestore()
+  })
+
+  it('email fourni dans params → utilisé directement', async () => {
+    const sendMailFn = vi.fn().mockResolvedValue({ messageId: 'smtp-msg-456' })
+    const provider = new SmtpEmailProvider({ sendMail: sendMailFn })
+
+    await provider.send({
+      userId,
+      event: 'NEW_COURSE',
+      title: 'Nouvelle formation',
+      body: 'Disponible.',
+      email: 'direct@exemple.com',
+      sourceId: `${P}-smtp-param`,
+    })
+
+    expect(sendMailFn.mock.calls[0][0].to).toBe('direct@exemple.com')
   })
 })
 
