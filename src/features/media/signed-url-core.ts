@@ -4,6 +4,8 @@ import { storageProvider } from '@/services/storage-provider'
 export interface SignedMedia {
   url: string
   expiresAt: Date
+  /** Durée de validité accordée à la signature, en secondes. */
+  expiresInSeconds: number
 }
 
 /**
@@ -45,5 +47,5 @@ export async function getSignedLessonUrl(
 
   const url = await storageProvider.getSignedUrl(storageKey, expiresInSeconds)
   const expiresAt = new Date(Date.now() + expiresInSeconds * 1000)
-  return { url, expiresAt }
+  return { url, expiresAt, expiresInSeconds }
 }

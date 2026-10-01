@@ -202,7 +202,7 @@ export default async function CoursePlayerPage({
                   Ouvrir le document PDF
                 </a>
                 <span className="text-xs text-gray-400">
-                  Lien valide {Math.round((signedMedia.expiresAt.getTime() - Date.now()) / 60000)} min
+                  Lien valide {Math.round(signedMedia.expiresInSeconds / 60)} min
                 </span>
               </div>
             )}

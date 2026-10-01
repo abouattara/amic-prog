@@ -1,4 +1,6 @@
 import { NotificationEvent } from '@prisma/client'
+import { createTransport } from 'nodemailer'
+import { Resend } from 'resend'
 import { prisma } from '@/lib/prisma'
 import { buildEmailContent } from './email-templates'
 
@@ -167,7 +169,6 @@ export function createNotificationProvider(): INotificationProvider {
     }
     const host = process.env.EMAIL_SMTP_HOST ?? 'smtp.gmail.com'
     const port = parseInt(process.env.EMAIL_SMTP_PORT ?? '587', 10)
-    const { createTransport } = require('nodemailer') as typeof import('nodemailer')
     const transporter = createTransport({ host, port, secure: port === 465, auth: { user, pass } })
     return new SmtpEmailProvider(transporter)
   }
@@ -178,7 +179,6 @@ export function createNotificationProvider(): INotificationProvider {
       console.warn('[NotificationProvider] EMAIL_PROVIDER=resend mais EMAIL_API_KEY absent — fallback sur mock')
       return new MockNotificationProvider()
     }
-    const { Resend } = require('resend') as typeof import('resend')
     return new ResendEmailProvider(new Resend(apiKey))
   }
 
